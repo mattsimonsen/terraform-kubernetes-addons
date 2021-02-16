@@ -7,6 +7,11 @@ module "kapsule-addons" {
     scw_default_organization_id = "7515164c-2e75-11eb-adc1-0242ac120002"
   }
 
+  github = {
+    owner = "marie"
+    token = "7515164c-2e75-11eb-adc1-0242ac120002"
+  }
+
   ingress-nginx = {
     enabled = true
   }
@@ -20,14 +25,13 @@ module "kapsule-addons" {
   }
 
   cert-manager = {
-    enabled = true
+    enabled                        = true
     enable_default_cluster_issuers = true
   }
 
   scaleway_webhook_dns = {
     enabled = true
   }
-
 
   flux = {
     enabled      = true
@@ -40,6 +44,16 @@ module "kapsule-addons" {
       registry:
         automationInterval: "2m"
       EXTRA_VALUES
+  }
+
+  fluxv2 = {
+    enabled               = true
+    github_url            = "https://github.com/marie/curie"
+    github_owner          = "marie"
+    personal_access_token = ""
+    repository            = "curie"
+    repository_visibility = "public"
+    branch                = "main"
   }
 
   prometheus-operator = {

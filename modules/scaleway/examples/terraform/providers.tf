@@ -40,3 +40,8 @@ provider "kubectl" {
   token                  = module.kapsule.kubeconfig[0]["token"]
   load_config_file       = false
 }
+
+provider "github" {
+  owner = var.github["owner"]
+  token = var.github["token"]
+}
