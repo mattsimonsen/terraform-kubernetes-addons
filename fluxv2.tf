@@ -10,22 +10,20 @@ locals {
       network_policy        = true
       version               = "v0.8.0"
       github_url            = "https://github.com/marie/curie"
-      github_owner          = var.github["owner"]
       repository            = "curie"
       repository_visibility = "public"
       branch                = "main"
-      personal_access_token = var.github["token"]
     },
     var.fluxv2
   )
 
-  apply = [for v in data.kubectl_file_documents.apply.documents : {
+  apply = [for v in data.kubectl_file_documents.apply[0].documents : {
     data : yamldecode(v)
     content : v
     }
   ]
 
-  sync = [for v in data.kubectl_file_documents.sync.documents : {
+  sync = [for v in data.kubectl_file_documents.sync[0].documents : {
     data : yamldecode(v)
     content : v
     }
@@ -66,7 +64,7 @@ data "flux_install" "main" {
 # https://registry.terraform.io/providers/gavinbunney/kubectl/latest
 data "kubectl_file_documents" "apply" {
   count   = local.fluxv2["enabled"] ? 1 : 0
-  content = data.flux_install.main.content
+  content = data.flux_install.main[0].content
 }
 
 # Apply manifests on the cluster
@@ -87,7 +85,7 @@ data "flux_sync" "main" {
 # https://registry.terraform.io/providers/gavinbunney/kubectl/latest
 data "kubectl_file_documents" "sync" {
   count   = local.fluxv2["enabled"] ? 1 : 0
-  content = data.flux_sync.main.content
+  content = data.flux_sync.main[0].content
 }
 
 # Apply manifests on the cluster
@@ -103,15 +101,14 @@ resource "kubernetes_secret" "main" {
   depends_on = [kubectl_manifest.apply]
 
   metadata {
-    name      = data.flux_sync.main.name
-    namespace = data.flux_sync.main.namespace
+    name      = data.flux_sync.main[0].name
+    namespace = data.flux_sync.main[0].namespace
   }
 
   data = {
-    "identity.pub" = tls_private_key.identity.public_key_pem
-    identity       = tls_private_key.identity.private_key_pem
+    "identity.pub" = tls_private_key.identity[0].public_key_pem
+    identity       = tls_private_key.identity[0].private_key_pem
     username       = "git"
-    password       = local.fluxv2["personal_access_token"]
   }
 }
 
@@ -125,39 +122,39 @@ resource "github_repository" "main" {
 
 resource "github_branch_default" "main" {
   count      = local.fluxv2["enabled"] ? 1 : 0
-  repository = github_repository.main.name
+  repository = github_repository.main[0].name
   branch     = local.fluxv2["branch"]
 }
 
 resource "github_repository_deploy_key" "main" {
   count      = local.fluxv2["enabled"] ? 1 : 0
-  title      = "flux-${github_repository.main.name}-${local.fluxv2["branch"]}"
-  repository = github_repository.main.name
-  key        = tls_private_key.identity.public_key_openssh
+  title      = "flux-${github_repository.main[0].name}-${local.fluxv2["branch"]}"
+  repository = github_repository.main[0].name
+  key        = tls_private_key.identity[0].public_key_openssh
   read_only  = true
 }
 
 resource "github_repository_file" "install" {
   count      = local.fluxv2["enabled"] ? 1 : 0
-  repository = github_repository.main.name
-  file       = data.flux_install.main.path
-  content    = data.flux_install.main.content
+  repository = github_repository.main[0].name
+  file       = data.flux_install.main[0].path
+  content    = data.flux_install.main[0].content
   branch     = local.fluxv2["branch"]
 }
 
 resource "github_repository_file" "sync" {
   count      = local.fluxv2["enabled"] ? 1 : 0
-  repository = github_repository.main.name
-  file       = data.flux_sync.main.path
-  content    = data.flux_sync.main.content
+  repository = github_repository.main[0].name
+  file       = data.flux_sync.main[0].path
+  content    = data.flux_sync.main[0].content
   branch     = local.fluxv2["branch"]
 }
 
 resource "github_repository_file" "kustomize" {
   count      = local.fluxv2["enabled"] ? 1 : 0
-  repository = github_repository.main.name
-  file       = data.flux_sync.main.kustomize_path
-  content    = data.flux_sync.main.kustomize_content
+  repository = github_repository.main[0].name
+  file       = data.flux_sync.main[0].kustomize_path
+  content    = data.flux_sync.main[0].kustomize_content
   branch     = local.fluxv2["branch"]
 }
 
